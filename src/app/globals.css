@@ -1,26 +1,307 @@
 @import "tailwindcss";
 
+@theme {
+  /* Neutrals are biased blue, not grey. On a ground this dark a true neutral reads
+     as an absence; a cool bias reads as a chosen surface. */
+  --color-void: #07080b;
+  --color-panel: #0c0e13;
+  --color-raised: #12151c;
+  --color-line: #1a1e27;
+  --color-line-bright: #262c38;
+
+  --color-ink: #e6e9f0;
+  --color-ink-dim: #79808f;
+  --color-ink-faint: #464c59;
+
+  /* Two accents, both semantic and used nowhere decoratively:
+     command is what the system was told, response is what it actually did. */
+  --color-command: #f2b15e;
+  --color-response: #6fe3f2;
+  --color-response-deep: #14424c;
+
+  /* Retained aliases so the control rig at /lab/control keeps its vocabulary. */
+  --color-signal: #6fe3f2;
+  --color-signal-deep: #14424c;
+  --color-warn: #f2b15e;
+  --color-danger: #ff5f56;
+
+  /* No webfont, deliberately.
+     Monospace is the display face here, so the largest text on the page is also the
+     text a font swap would shift most — and a hosted font makes the production build
+     depend on a third-party CDN being up at deploy time. System stacks cost one render
+     with zero network requests, zero layout shift on the LCP element, and zero build
+     dependency. The faces differ slightly per platform; every one of them is good. */
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo,
+    Consolas, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display",
+    "Segoe UI", system-ui, "Helvetica Neue", sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  /* Written every frame by the ambient control loop. Any element can read these and
+     move without React knowing anything happened. Defaults keep the page correct
+     before the loop starts and on the server. */
+  --sys-x: 0;
+  --sys-y: 0;
+  --sys-energy: 0;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--color-void);
+  color: var(--color-ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Paper ----------------------------------------------------------------
+   The whole palette is redefined for print rather than each component being
+   overridden — the token system exists precisely so a second medium costs one
+   block instead of a second stylesheet. Ink on paper is not a dark instrument
+   panel, and printing the screen palette would empty a cartridge to say so. */
+@media print {
+  :root {
+    --color-void: #ffffff;
+    --color-panel: #ffffff;
+    --color-raised: #ffffff;
+    --color-line: #d5d5d5;
+    --color-line-bright: #b8b8b8;
+    --color-ink: #111111;
+    --color-ink-dim: #3a3a3a;
+    --color-ink-faint: #6a6a6a;
+    --color-response: #0b5e6b;
+    color-scheme: light;
+  }
+
+  @page {
+    margin: 15mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  /* Chrome that means nothing on paper. */
+  nav,
+  canvas,
+  .boot-overlay {
+    display: none !important;
+  }
+
+  a {
+    text-decoration: none !important;
+  }
+}
+
+/* A returning visitor never sees the boot. The inline script in the document head
+   stamps this attribute before first paint, so there is no frame in which the overlay
+   exists and then removes itself. */
+html[data-booted="1"] .boot-overlay {
+  display: none;
+}
+
+/* Numerals must not reflow as they tick — every readout on this page changes 10×/sec. */
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+::selection {
+  background: var(--color-signal);
+  color: var(--color-void);
+}
+
+/* One-shot sweep confirming a transmission. Neutralised by the reduced-motion
+   block at the foot of this file, which zeroes every animation duration. */
+/* Drains over the life of the confirmation, so a message that is about to be replaced
+   by the form again says so first. A panel that vanishes unannounced reads as a bug. */
+@keyframes deplete {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(420%);
+  }
+}
+
+/* --- Signal chain ----------------------------------------------------------
+   The pulse travelling each connector in the PATH diagram. Position comes from a
+   custom property written once per frame by the runtime; the breakpoint decides
+   whether that property means "along" or "down", so the JS never needs to know
+   which orientation the layout is currently in. */
+
+.signal-pulse {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--color-response);
+  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--color-response) 55%, transparent);
+  opacity: var(--pulse-opacity, 0);
+  left: 50%;
+  top: calc(var(--pulse, 0) * 100%);
+  transform: translate(-50%, -50%);
+  will-change: top, opacity;
+}
+
+@media (min-width: 768px) {
+  .signal-pulse {
+    top: 50%;
+    left: calc(var(--pulse, 0) * 100%);
+    will-change: left, opacity;
+  }
+}
+
+/* --- Range input -----------------------------------------------------------
+   Styling the native control rather than rebuilding it: keyboard stepping, arrow
+   keys, Home/End, screen-reader announcements and touch targets all come free and
+   correct, which a div with a drag handler would have to re-earn line by line. */
+
+.gain-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  cursor: ew-resize;
+}
+
+.gain-slider::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--color-line-bright);
+  border-radius: 2px;
+}
+
+.gain-slider::-moz-range-track {
+  height: 2px;
+  background: var(--color-line-bright);
+  border-radius: 2px;
+}
+
+.gain-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 2px;
+  height: 14px;
+  margin-top: -6px;
+  border-radius: 0;
+  background: var(--color-ink);
+  box-shadow: 0 0 0 4px var(--color-void);
+  transition: background 120ms ease;
+}
+
+.gain-slider::-moz-range-thumb {
+  width: 2px;
+  height: 14px;
+  border: none;
+  border-radius: 0;
+  background: var(--color-ink);
+  box-shadow: 0 0 0 4px var(--color-void);
+}
+
+.gain-slider:hover::-webkit-slider-thumb,
+.gain-slider:focus-visible::-webkit-slider-thumb {
+  background: var(--color-signal);
+}
+
+.gain-slider:hover::-moz-range-thumb,
+.gain-slider:focus-visible::-moz-range-thumb {
+  background: var(--color-signal);
+}
+
+.gain-slider:focus {
+  outline: none;
+}
+
+/* --- Touch targets ---------------------------------------------------------
+   The 2px thumb is the instrument look, and it is also about a twentieth of a
+   usable touch target — fine under a cursor, ungrabbable with a thumb.
+
+   Rather than thicken the mark, the hit area grows and the mark is painted into
+   the middle of it with a gradient: 28px of grabbable width, two visible pixels.
+   `touch-action: pan-y` keeps vertical scrolling working while the slider claims
+   horizontal drags, so nobody has to fight the page to move a gain. */
+@media (pointer: coarse) {
+  .gain-slider {
+    height: 40px;
+    touch-action: pan-y;
+  }
+
+  .gain-slider::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+    margin-top: -13px;
+    background: linear-gradient(
+      90deg,
+      transparent 0 13px,
+      var(--color-ink) 13px 15px,
+      transparent 15px
+    );
+    box-shadow: none;
+  }
+
+  .gain-slider:hover::-webkit-slider-thumb,
+  .gain-slider:focus-visible::-webkit-slider-thumb {
+    background: linear-gradient(
+      90deg,
+      transparent 0 13px,
+      var(--color-response) 13px 15px,
+      transparent 15px
+    );
+  }
+
+  .gain-slider::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(
+      90deg,
+      transparent 0 13px,
+      var(--color-ink) 13px 15px,
+      transparent 15px
+    );
+    box-shadow: none;
+  }
+
+  .gain-slider:hover::-moz-range-thumb,
+  .gain-slider:focus-visible::-moz-range-thumb {
+    background: linear-gradient(
+      90deg,
+      transparent 0 13px,
+      var(--color-response) 13px 15px,
+      transparent 15px
+    );
+  }
+}
+
+.gain-slider:focus-visible {
+  outline: 1px solid var(--color-signal);
+  outline-offset: 6px;
+}
+
+/* Fine-grained keyboard control matters here: the difference between ζ 0.98 and ζ 1.02
+   is the difference between overshoot and none, and a mouse cannot reliably hit it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
