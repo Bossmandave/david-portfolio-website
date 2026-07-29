@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { EMAIL } from "@/content/contact";
 import { LAB, MODULES } from "@/content/modules";
-import { PROJECTS } from "@/content/projects";
+import { VISIBLE_PROJECTS } from "@/content/projects";
 import { useModuleTransition } from "@/engine/transition/TransitionProvider";
 
 interface Command {
@@ -35,7 +35,7 @@ function buildCommands(): Command[] {
       keywords: "pid tuning rig oscilloscope gains",
       run: ({ go }) => go(LAB.href),
     },
-    ...PROJECTS.map<Command>((project) => ({
+    ...VISIBLE_PROJECTS.map<Command>((project) => ({
       id: `work-${project.slug}`,
       group: "Work",
       label: project.title,

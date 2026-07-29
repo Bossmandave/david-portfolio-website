@@ -1,7 +1,10 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
-import { PROJECTS, getProject } from "@/content/projects";
-import { SHIPPED } from "@/content/shipped";
+import { PROJECTS, getProject, projectsFor } from "@/content/projects";
+import { SHIPPED, shippedFor } from "@/content/shipped";
 
 describe("project content", () => {
   it("has unique slugs", () => {
@@ -111,35 +114,76 @@ describe("the two tiers stay distinct", () => {
 });
 
 describe("publication gate", () => {
-  // Both tiers, deliberately. The gate originally covered only PROJECTS, because the
-  // shipped tier did not exist when it was written — so a placeholder added to the
-  // second tier passed straight through it and would have deployed wearing its own
-  // "Placeholder" badge. A guard that covers one of two paths is worse than none,
-  // because it is trusted.
-  const placeholders = [
+  const drafts = [
     ...PROJECTS.filter((project) => project.placeholder).map((p) => p.slug),
     ...SHIPPED.filter((entry) => entry.placeholder).map((e) => e.name),
   ];
 
-  it("refuses to pass with placeholder content when STRICT_CONTENT is set", () => {
-    const strict =
-      process.env.STRICT_CONTENT === "1" ||
-      process.env.VERCEL_ENV === "production";
-
-    if (!strict) {
-      if (placeholders.length > 0) {
-        console.warn(
-          `\n  ⚠  ${placeholders.length} placeholder entr(y/ies) present: ` +
-            `${placeholders.join(", ")}.` +
-            `\n     Production builds with STRICT_CONTENT=1 will fail until these are real.\n`,
-        );
-      }
-      return;
-    }
+  /**
+   * The rule this enforces changed, and the reason is worth recording.
+   *
+   * It used to fail the build whenever a placeholder *existed anywhere in the file*.
+   * That was right when it was written, because nothing else stopped a draft reaching
+   * production. Since then the content modules gained a real filter — drafts generate
+   * no route, no index entry and no palette result in a production build — and the old
+   * rule started failing deploys over work that was already unreachable. A guard that
+   * blocks a correct deployment teaches people to delete the guard.
+   *
+   * So it now asserts the thing that actually matters: nothing published is a draft.
+   * Keeping unfinished work in the repository is normal. Serving it is not.
+   */
+  it("publishes nothing marked as a draft", () => {
+    const publishedProjects = projectsFor(false);
+    const publishedShipped = shippedFor(false);
 
     expect(
-      placeholders,
-      "placeholder work cannot be published — finish it or remove it",
+      publishedProjects.filter((project) => project.placeholder).map((p) => p.slug),
+      "a draft reached the published project list",
+    ).toEqual([]);
+
+    expect(
+      publishedShipped.filter((entry) => entry.placeholder).map((e) => e.name),
+      "a draft reached the published shipped list",
+    ).toEqual([]);
+
+    // Not an error — just a receipt, so a draft that has quietly sat unfinished for
+    // months is visible in the test output rather than only in the file.
+    if (drafts.length > 0) {
+      console.warn(
+        `\n  ⚠  ${drafts.length} draft(s) held back from production: ${drafts.join(", ")}.\n`,
+      );
+    }
+  });
+
+  /**
+   * The filter above is only worth anything if every surface uses it.
+   *
+   * This is not hypothetical: the command palette imported the unfiltered `PROJECTS`
+   * and would have listed a draft in production, linking to a route that had
+   * deliberately not been generated. The build was green, the page rendered, and the
+   * only symptom was a 404 behind a search result nobody would think to check.
+   */
+  it("renders every production surface from the filtered lists", () => {
+    const root = join(process.cwd(), "src");
+
+    const files = readdirSync(root, { recursive: true, encoding: "utf8" })
+      .filter((file) => /\.tsx?$/.test(file))
+      .filter((file) => !file.includes("__tests__"))
+      // The content modules are where the unfiltered arrays are defined and filtered.
+      .filter((file) => !file.replace(/\\/g, "/").startsWith("content/"));
+
+    const offenders = files.filter((file) => {
+      const source = readFileSync(join(root, file), "utf8");
+      const imports =
+        source.match(
+          /import\s*\{([^}]*)\}\s*from\s*"@\/content\/(?:projects|shipped)"/g,
+        ) ?? [];
+      return imports.some((line) => /\b(?:PROJECTS|SHIPPED)\b/.test(line));
+    });
+
+    expect(
+      offenders,
+      "import VISIBLE_PROJECTS / VISIBLE_SHIPPED — the unfiltered lists include drafts",
     ).toEqual([]);
   });
 });

@@ -44,5 +44,10 @@ export const SHIPPED: Shipped[] = [
 export const REAL_SHIPPED = SHIPPED.filter((entry) => !entry.placeholder);
 
 /** Drafts are visible while developing and absent from production. See projects.ts. */
-export const VISIBLE_SHIPPED =
-  process.env.NODE_ENV === "production" ? REAL_SHIPPED : SHIPPED;
+export function shippedFor(includeDrafts: boolean): Shipped[] {
+  return includeDrafts ? SHIPPED : REAL_SHIPPED;
+}
+
+export const VISIBLE_SHIPPED = shippedFor(
+  process.env.NODE_ENV !== "production",
+);

@@ -928,8 +928,13 @@ export const REAL_PROJECTS = PROJECTS.filter((project) => !project.placeholder);
  * The STRICT_CONTENT test is the second line of defence, not the first. A guard whose
  * only effect is failing a build that people can choose not to run is not a guard.
  */
-export const VISIBLE_PROJECTS =
-  process.env.NODE_ENV === "production" ? REAL_PROJECTS : PROJECTS;
+export function projectsFor(includeDrafts: boolean): Project[] {
+  return includeDrafts ? PROJECTS : REAL_PROJECTS;
+}
+
+export const VISIBLE_PROJECTS = projectsFor(
+  process.env.NODE_ENV !== "production",
+);
 
 export function getVisibleProject(slug: string): Project | undefined {
   return VISIBLE_PROJECTS.find((project) => project.slug === slug);
