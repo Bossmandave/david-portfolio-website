@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 
-import { PROJECTS } from "@/content/projects";
+import { VISIBLE_PROJECTS } from "@/content/projects";
+import { VISIBLE_SHIPPED } from "@/content/shipped";
 import { AmbientField } from "@/modules/system/AmbientField";
 import { Reveal } from "@/modules/system/Reveal";
 
@@ -30,7 +31,7 @@ export function WorkIndex() {
         </Reveal>
 
         <ol className="mt-16 border-t border-line">
-          {PROJECTS.map((project, index) => (
+          {VISIBLE_PROJECTS.map((project, index) => (
             <li key={project.slug}>
               <Reveal delay={0.25 + index * 0.08} distance={14}>
                 <Link
@@ -81,6 +82,63 @@ export function WorkIndex() {
             </li>
           ))}
         </ol>
+
+        {/* The second tier, and framed as such. Presenting these with the same weight
+            as the case studies would flatten the difference between "here is how I
+            think" and "here is a thing that works". */}
+        <Reveal delay={0.5} className="mt-20">
+          <h2 className="font-mono text-[10px] tracking-[0.22em] text-ink-faint uppercase">
+            Also shipped
+          </h2>
+          <p className="mt-3 max-w-[52ch] text-[13px] leading-[1.6] text-ink-dim">
+            Briefs, deadlines and stakeholders. No thesis attached — they work, and the
+            links prove it.
+          </p>
+
+          <ul className="mt-6 border-t border-line">
+            {VISIBLE_SHIPPED.map((entry) => (
+              <li
+                key={entry.name}
+                className="grid items-baseline gap-x-8 gap-y-1.5 border-b border-line py-5 md:grid-cols-[4rem_minmax(0,1fr)_auto]"
+              >
+                <span className="font-mono text-[11px] tracking-[0.14em] text-ink-faint tabular-nums">
+                  {entry.year}
+                </span>
+
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-[15px] leading-tight text-ink">
+                    {entry.name}
+                    <span className="font-mono text-[10px] tracking-[0.16em] text-ink-faint uppercase">
+                      {entry.context}
+                    </span>
+                    {entry.placeholder ? (
+                      <span className="border border-warn/50 px-1.5 py-0.5 font-mono text-[9px] tracking-[0.18em] text-warn uppercase">
+                        Placeholder
+                      </span>
+                    ) : null}
+                  </p>
+                  <p className="mt-1.5 max-w-[62ch] text-[13px] leading-[1.55] text-ink-dim">
+                    {entry.summary}
+                  </p>
+                  <p className="mt-2 font-mono text-[10px] tracking-[0.1em] text-ink-faint">
+                    {entry.stack.join(" · ")}
+                  </p>
+                </div>
+
+                {entry.href ? (
+                  <a
+                    href={entry.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 font-mono text-[11px] tracking-[0.14em] text-ink-dim uppercase transition-colors hover:text-response focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-3 focus-visible:outline-response"
+                  >
+                    Visit ↗
+                  </a>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </Reveal>
       </main>
     </div>
   );

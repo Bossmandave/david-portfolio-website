@@ -9,9 +9,15 @@
   --color-line: #1a1e27;
   --color-line-bright: #262c38;
 
+  /* Three levels, all clearing WCAG AA (4.5:1) against the void.
+     `ink-faint` was #464c59 — a handsome 2.33:1 and unreadable. It carries module
+     labels, hints and metadata, so it is body text whatever it looks like, and the
+     small size makes it normal text rather than large. `ink-dim` moved up with it to
+     keep the three tiers distinguishable rather than collapsing two into one.
+       ink 16.48:1 · ink-dim 6.41:1 · ink-faint 4.66:1 */
   --color-ink: #e6e9f0;
-  --color-ink-dim: #79808f;
-  --color-ink-faint: #464c59;
+  --color-ink-dim: #8a92a3;
+  --color-ink-faint: #737a8c;
 
   /* Two accents, both semantic and used nowhere decoratively:
      command is what the system was told, response is what it actually did. */
@@ -303,5 +309,37 @@ html[data-booted="1"] .boot-overlay {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- Screenshot viewer -----------------------------------------------------
+   A native <dialog>, so the focus trap, the inert page, Escape and focus returning
+   to the thumbnail all come from the platform rather than from a hand-rolled modal
+   that gets one of them wrong. What is left is box model: the UA sheet sizes a
+   dialog to its content and centres it in a bordered box, which is not what a
+   full-bleed image viewer wants. */
+.gallery-dialog {
+  width: 100dvw;
+  max-width: 100dvw;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  background: transparent;
+  color: var(--color-ink);
+}
+
+/* Near-opaque rather than translucent-and-blurred. A full-screen backdrop-filter is
+   composited every frame, and the ambient WebGL field is still running underneath —
+   paying for a blur nobody can see through is the sort of cost that quietly turns a
+   60 FPS page into a 45 FPS one on the hardware that can least afford it. */
+.gallery-dialog::backdrop {
+  background: color-mix(in srgb, var(--color-void) 94%, transparent);
+}
+
+@media print {
+  .gallery-dialog {
+    display: none !important;
   }
 }

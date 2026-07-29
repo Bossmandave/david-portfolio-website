@@ -181,8 +181,50 @@ Placeholder case studies describe work that does not exist, so shipping them wou
 presenting fabricated projects as real. Under `STRICT_CONTENT` the build **fails** and
 names the offending slugs. Local and preview builds warn and pass.
 
-> **Two case studies are currently placeholders** — `ai-streaming-interface` and
-> `lysterpro`. They cannot be deployed until they are real.
+> **One case study is currently a placeholder** — `cw-real-estate`, which is built but
+> not yet released. It cannot be deployed until that changes. Placeholders also generate
+> no route in a production build, so there is no URL to guess.
+
+### Screens
+
+Case studies take an optional `gallery` of screenshots. It renders on the **detail page
+only** — the index stays typographic on purpose, because a grid of thumbnails there
+turns a set of arguments into a set of pictures and the reader starts choosing by
+prettiest.
+
+```ts
+gallery: [
+  {
+    src: "/shots/nivram/thread.png",   // lives in public/
+    alt: "Assistant thread mid-stream, tokens arriving into a partially rendered card",
+    caption: "The streaming thread. The renderer and the partial-payload handling are mine; the card design came from the team.",
+    width: 1170,                        // the file's intrinsic pixels
+    height: 2532,
+  },
+],
+```
+
+Four rules, all enforced by `src/content/__tests__/gallery.test.ts`:
+
+1. **The file must exist** under `public/`. A renamed screenshot renders as a broken
+   icon and shows up in no build log.
+2. **PNG or JPEG.** Not a delivery decision — Next re-encodes to WebP/AVIF on the way
+   out. It is so the test can read the header. A format it cannot parse is a dimension
+   check that silently does nothing.
+3. **`width`/`height` must match the file on disk.** The test reads the real PNG `IHDR`
+   chunk or JPEG start-of-frame marker and fails on drift. These values are what let the
+   browser reserve the box before the bytes arrive; stale ones mean the page jumps as it
+   loads.
+4. **`alt` and `caption` must both exist and must differ.** The caption is visible text,
+   so duplicating it into `alt` makes a screen-reader user hear the same sentence twice
+   and learn nothing from the image. The caption is also where the ownership boundary
+   gets stated — the same discipline `Metric.caveat` applies to numbers.
+
+Tiles are height-capped rather than width-fitted, so a portrait phone capture and a
+desktop capture sit in the same band instead of one running past a full screen. The
+enlarged view is a native `<dialog>` opened with `showModal()`, which brings the focus
+trap, the inert background, Escape and focus restoration from the platform rather than
+from a hand-rolled modal that gets one of them wrong; arrow keys page through the set.
 
 ---
 
@@ -273,6 +315,34 @@ Any host that runs Next.js. Set `CONTACT_WEBHOOK_URL` in the host's environment,
 
 ---
 
+## Measured
+
+Lighthouse, against a **production build** — `npm run build && npm start`. Dev-server
+numbers are meaningless: unminified bundles, HMR sockets and no optimisation.
+
+| | Performance | Accessibility | Best Practices | SEO |
+| --- | --- | --- | --- | --- |
+| **Desktop** | 99 | 100 | 100 | 100 |
+| **Mobile** (throttled) | 95 | 95 | 100 | 100 |
+
+Desktop: FCP 0.2 s · LCP 0.6 s · TBT 10 ms · CLS 0.
+Mobile: FCP 0.8 s · LCP 2.8 s · TBT 120 ms · CLS 0.
+
+Reproduce it:
+
+```bash
+npm run build && npx next start -p 3100
+npx lighthouse http://localhost:3100 --preset=desktop --view
+```
+
+Run it in a clean profile. Browser extensions inject attributes into the DOM and will
+cost you points that aren't yours.
+
+> Localhost has no network latency, so these flatter slightly. Re-measure against the
+> deployed URL for numbers you can quote.
+
+---
+
 ## Known gaps
 
 Recorded here deliberately rather than left to be discovered:
@@ -280,5 +350,4 @@ Recorded here deliberately rather than left to be discovered:
 - Two case studies are placeholders.
 - Browser back/forward navigation does not animate — those changes bypass the click
   interceptor that drives transitions.
-- Lighthouse has never been measured. The performance claims above are architectural
-  reasoning, not evidence.
+- Mobile LCP is 2.8 s. Under the 4 s threshold, but the largest thing worth improving.

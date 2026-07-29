@@ -6,6 +6,7 @@ import { Section } from "@/components/Section";
 import type { Project } from "@/content/types";
 import { AmbientField } from "@/modules/system/AmbientField";
 import { Reveal } from "@/modules/system/Reveal";
+import { Gallery } from "@/modules/work/Gallery";
 
 export function CaseStudy({ project }: { project: Project }) {
   return (
@@ -41,6 +42,37 @@ export function CaseStudy({ project }: { project: Project }) {
             <p className="mt-7 max-w-[58ch] text-[clamp(1rem,2vw,1.1875rem)] leading-[1.55] text-ink">
               {project.summary}
             </p>
+
+            {/* Directly under the summary, not eight sections down. A live URL is the
+                strongest evidence on the page — a reader who wants to see the thing
+                working should not have to read a case study first to find it. */}
+            {project.links.length > 0 ? (
+              <ul className="mt-7 flex flex-wrap gap-2">
+                {project.links.map((link) => (
+                  <li key={link.label}>
+                    {link.private ? (
+                      <span className="flex items-center gap-2 border border-line px-3 py-1.5 font-mono text-[11px] tracking-[0.12em] text-ink-faint">
+                        {link.label}
+                        <span aria-hidden>·</span>
+                        <span className="text-[10px] tracking-[0.18em] uppercase">
+                          private
+                        </span>
+                      </span>
+                    ) : (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 border border-response/45 bg-response/8 px-3 py-1.5 font-mono text-[11px] tracking-[0.12em] text-response transition-colors hover:border-response hover:bg-response/16 focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-3 focus-visible:outline-response"
+                      >
+                        {link.label}
+                        <span aria-hidden>↗</span>
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </header>
         </Reveal>
 
@@ -59,6 +91,16 @@ export function CaseStudy({ project }: { project: Project }) {
               {project.role}
             </p>
           </Section>
+
+          {/* After Scope and before the argument, deliberately. Screens shown first
+              invite the reader to assume the whole product is yours; shown after the
+              boundary has been stated, each one is read inside it. And a page this
+              text-heavy needs the reader to see the artefact before paragraph six. */}
+          {project.gallery && project.gallery.length > 0 ? (
+            <Section label="Screens">
+              <Gallery shots={project.gallery} />
+            </Section>
+          ) : null}
 
           <Section label="Problem">
             <p className="max-w-[64ch] leading-[1.65] text-ink-dim">
@@ -134,6 +176,26 @@ export function CaseStudy({ project }: { project: Project }) {
             </Section>
           ) : null}
 
+          {/* Deliberately after the argument and before the numbers: the breadth is
+              real, but a reader who meets it first will read the case study as a list
+              of features rather than as one point made properly. */}
+          {project.alsoBuilt && project.alsoBuilt.length > 0 ? (
+            <Section label="Also built">
+              <div className="space-y-6">
+                {project.alsoBuilt.map((item) => (
+                  <article key={item.title}>
+                    <h3 className="font-mono text-[0.9375rem] leading-snug tracking-[-0.01em] text-ink">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 max-w-[64ch] text-[0.9375rem] leading-[1.6] text-ink-dim">
+                      {item.body}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </Section>
+          ) : null}
+
           {project.outcomes.length > 0 ? (
             <Section label="Results">
               <div className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-3">
@@ -160,8 +222,11 @@ export function CaseStudy({ project }: { project: Project }) {
             </Section>
           ) : null}
 
+          {/* Not "what I'd change" — that heading frames everything beneath it as
+              outstanding, so a bug that was found AND fixed reads as still broken.
+              This section holds both, and each entry states which it is. */}
           {project.lessons.length > 0 ? (
-            <Section label="What I'd change">
+            <Section label="What I got wrong">
               <ul className="space-y-5">
                 {project.lessons.map((lesson) => (
                   <li
@@ -190,30 +255,6 @@ export function CaseStudy({ project }: { project: Project }) {
             </Section>
           ) : null}
 
-          {project.links.length > 0 ? (
-            <Section label="Links">
-              <ul className="space-y-2">
-                {project.links.map((link) => (
-                  <li key={link.label}>
-                    {link.private ? (
-                      <span className="font-mono text-[12px] text-ink-faint">
-                        {link.label} — not public
-                      </span>
-                    ) : (
-                      <a
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-mono text-[12px] text-response underline decoration-response/30 underline-offset-4 transition-colors hover:decoration-response focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-response"
-                      >
-                        {link.label} ↗
-                      </a>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          ) : null}
         </div>
       </main>
     </div>

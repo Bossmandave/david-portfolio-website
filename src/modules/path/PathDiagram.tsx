@@ -81,15 +81,18 @@ export function PathDiagram({
               tabIndex={active ? 0 : -1}
               onClick={() => onSelect(stage.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
-              className={`group relative flex-1 border px-4 py-4 text-left transition-colors focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-3 focus-visible:outline-response ${
+              /* Response stays reserved for the selected block, so hover brightens
+                 toward ink instead — the ghost-button convention. A hover that tinted
+                 cyan would read as "this one is selected" on the way to clicking it. */
+              className={`group relative flex-1 cursor-pointer border px-4 py-4 text-left transition-colors focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-3 focus-visible:outline-response ${
                 active
                   ? "border-response/60 bg-response/6"
-                  : "border-line bg-panel hover:border-line-bright"
+                  : "border-line bg-panel hover:border-ink-faint hover:bg-raised"
               }`}
             >
               <span
                 className={`block font-mono text-[9px] tracking-[0.24em] uppercase transition-colors ${
-                  active ? "text-response" : "text-ink-faint"
+                  active ? "text-response" : "text-ink-faint group-hover:text-ink-dim"
                 }`}
               >
                 {stage.block}

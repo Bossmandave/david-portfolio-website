@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { SiteMark } from "@/components/SiteMark";
 import { MODULES } from "@/content/modules";
 
 export function ModuleNav() {
@@ -20,9 +21,13 @@ export function ModuleNav() {
             hiding them behind one costs a tap for no gain. */}
         <Link
           href="/"
-          className="hidden min-w-0 truncate font-mono text-[11px] tracking-[0.22em] text-ink uppercase transition-colors hover:text-response focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-response sm:block"
+          className="hidden min-w-0 items-center gap-2.5 font-mono text-[11px] tracking-[0.22em] text-ink uppercase transition-colors hover:text-response focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-response sm:flex"
         >
-          David Uchenna Agodi
+          {/* Fixed accents rather than currentColor: the mark keeps its own colours
+              through the link's hover, because cyan here means the same thing it means
+              everywhere else on the site and is not the link's state. */}
+          <SiteMark className="h-3.5 w-auto shrink-0" />
+          <span className="truncate">David Uchenna Agodi</span>
         </Link>
 
         <ul className="flex w-full items-center justify-between gap-3 sm:w-auto sm:shrink-0 sm:justify-end sm:gap-5">
