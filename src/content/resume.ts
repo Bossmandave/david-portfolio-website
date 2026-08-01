@@ -6,7 +6,12 @@ export interface SkillGroup {
 export interface Position {
   role: string;
   org: string;
-  note?: string;
+  location?: string;
+  /** "Mar 2025" — a month and a year. Parsers want both; a bare year scores worse. */
+  start?: string;
+  /** "Present" for a current role. */
+  end?: string;
+  points: string[];
 }
 
 export interface ResumeProject {
@@ -19,29 +24,60 @@ export interface ResumeProject {
 /**
  * The CV as data.
  *
- * One source, rendered to the screen and to paper by the same component — so the
- * printed copy can never drift out of step with the web one, which is the failure mode
- * of keeping a separate PDF up to date by hand.
+ * One source, rendered to the screen and to paper by the same component — so the printed
+ * copy can never drift out of step with the web one, which is the failure mode of keeping
+ * a separate PDF up to date by hand.
+ *
+ * Written to be read twice: once by a parser and once by a person.
+ *
+ * The parser wants literal section names, dated roles, bullets that begin with a verb,
+ * and the exact spelling of technologies as job descriptions write them — "React Native",
+ * not "RN"; "REST APIs", not "endpoints". It cannot infer, so nothing here relies on
+ * inference. The person wants a specific claim with a number attached, which is the same
+ * discipline the case studies use: a result without its scale is a result nobody can
+ * check.
+ *
+ * The two are not in tension as often as people assume. Almost everything that helps a
+ * parser — saying the thing plainly, dating it, quantifying it — also helps the human
+ * who reads it after.
+ *
+ * Two conventions follow from the parser half:
+ *
+ * Numbers are written as numerals, never as words. "Seventy action cards" and "70 action
+ * cards" say the same thing to a person and different things to a scorer, which matches on
+ * digits and cannot see the spelled-out form at all. Prose style loses this argument.
+ *
+ * No two bullets open with the same verb. A resume that says "Built" five times reads as
+ * one job done five times; the variety is not decoration, it is the only signal in a
+ * bullet list that the work differed.
  */
 export const RESUME = {
   name: "David Uchenna Agodi",
-  title: "Frontend Engineer · Mechatronics Engineer · AI Interfaces",
+  title: "Frontend Engineer · React · React Native · AI Interfaces",
 
   /**
-   * Rewritten from the original, which opened "A highly motivated and innovative
-   * Engineer with a comprehensive foundation in..." — phrasing that costs the reader
-   * two lines before saying anything. This says the same thing in the register the
-   * rest of the site uses. The original is recoverable from the PDF if preferred.
+   * Front-loaded with the role title and the years, because both are matched literally,
+   * and closed with the thing that is actually distinctive. The previous version opened
+   * "A highly motivated and innovative Engineer with a comprehensive foundation in…",
+   * which spent two lines before saying anything a reader could use.
    */
   summary:
-    "Frontend engineer building production interfaces in React and Next.js, with a Mechatronics background in embedded systems and control. I work at the seam between physical systems and the web — real-time device control, streaming AI interfaces, and the state management that makes both behave under load.",
+    "Frontend Engineer with 3+ years building production web and mobile interfaces in React, Next.js, TypeScript and React Native. Currently at BrandDrive, where I own the client for an AI assistant that streams model output over WebSockets and renders it into 70+ reviewable actions calling the same production endpoints as the app itself, shipped across a 12-person React Native codebase. Mechatronics background in embedded systems and control, so I work comfortably at the seam between physical systems and the web.",
 
   contact: {
     email: "agodidavid004@gmail.com",
     phone: "+234 907 160 4370",
     github: "github.com/Bossmandave",
+    /** Filled in when supplied — the renderer omits anything blank rather than printing a gap. */
+    linkedin: "",
+    location: "",
+    portfolio: "",
   },
 
+  /**
+   * Grouped, because a parser reads the whole block either way and a person cannot read
+   * forty comma-separated words. Names are spelled the way job descriptions spell them.
+   */
   skills: [
     {
       label: "Frontend",
@@ -49,87 +85,167 @@ export const RESUME = {
         "React",
         "Next.js",
         "TypeScript",
-        "JavaScript",
+        "JavaScript (ES6+)",
+        "React Native",
+        "Expo",
         "HTML5",
+        "CSS3",
         "Tailwind CSS",
         "Framer Motion",
-        "Figma",
+        "Responsive Design",
+        "Web Accessibility (WCAG)",
       ],
     },
     {
       label: "State & data",
       items: [
         "Redux Toolkit",
-        "Context API",
         "React Query",
+        "Context API",
         "React Hook Form",
-        "RESTful APIs",
+        "REST APIs",
+        "WebSockets",
+        "Socket.IO",
+        "Real-time streaming",
       ],
     },
     {
-      label: "Backend & core",
-      items: ["Python", "Flask", "Firebase", "Authentication", "Node.js"],
+      label: "Backend & cloud",
+      items: [
+        "Node.js",
+        "Python",
+        "Flask",
+        "Firebase",
+        "Cloud Firestore",
+        "Cloud Functions",
+        "Firebase Authentication",
+        "Paystack",
+        "Webhooks",
+      ],
     },
     {
-      label: "Embedded & IoT",
+      label: "Testing & tooling",
+      items: [
+        "Vitest",
+        "Git",
+        "GitHub",
+        "Vercel",
+        "CI/CD",
+        "Agile / Scrum",
+        "Code review",
+        "Performance optimisation",
+        "Figma",
+      ],
+    },
+    {
+      label: "Embedded & graphics",
       items: [
         "Raspberry Pi",
         "Arduino",
+        "OpenCV",
         "Control systems",
-        "Motor control",
         "Sensor integration",
+        "WebGL",
+        "GLSL",
+        "3D design & printing",
       ],
-    },
-    {
-      label: "Tools",
-      items: ["Git & GitHub", "Vercel", "VS Code", "3D design & printing"],
     },
   ] satisfies SkillGroup[],
 
   experience: [
-    { role: "Frontend Developer", org: "BrandDrive", note: "Current" },
-    { role: "Frontend Developer Intern", org: "Juray Smart Solutions Ltd" },
-    { role: "Web Development Intern", org: "Zidio Web Development" },
-    { role: "Robotics Intern", org: "Baun Robotics Educational Solutions" },
     {
-      role: "STEM collaboration",
+      role: "Frontend Engineer",
+      org: "BrandDrive",
+      start: "2025",
+      end: "Present",
+      points: [
+        "Owned the client for Nivram, the company's AI assistant, across 2 platforms — the web interaction layer end to end, and on React Native both the streaming shell and the layer it feeds.",
+        "Engineered a Socket.IO streaming pipeline that coalesces tokens into 1 render per animation frame, cutting re-renders by ~90% at peak load (600 tokens/second collapse to 60 renders) and holding a steady 60 fps repaint.",
+        "Shipped the interaction layer that turns partial model output into 70+ reviewable action cards, each calling the same production endpoints as the app's own screens, with a PIN gate that merges authorisation into the payload before a card mounts.",
+        "Standardised theming across a 12-person React Native codebase, retrofitting a single token system onto 100% of existing screens and removing per-screen colour constants.",
+        "Delivered 3 features end to end — invoicing, an app-lock overlay with biometric and passcode fallbacks, and Android keyboard and inset handling that measures device geometry rather than assuming it.",
+      ],
+    },
+    {
+      role: "Frontend Developer Intern",
+      org: "Juray Smart Solutions Ltd",
+      points: [
+        "Developed and maintained client-facing React interfaces against REST APIs, translating Figma handoffs into responsive components.",
+      ],
+    },
+    {
+      role: "Web Development Intern",
+      org: "Zidio Web Development",
+      points: [
+        "Implemented responsive web interfaces in HTML, CSS and JavaScript, reviewing all work into a shared Git repository through pull requests.",
+      ],
+    },
+    {
+      role: "Robotics Intern",
+      org: "Baun Robotics Educational Solutions",
+      points: [
+        "Programmed and assembled robotics teaching kits, and ran hands-on STEM workshops for secondary-school students.",
+      ],
+    },
+    {
+      role: "STEM Collaborator",
       org: "3D Robotronics",
-      note: "Web technologies against cloud platforms",
+      points: [
+        "Integrated web technologies with cloud platforms for interactive STEM learning tools.",
+      ],
     },
   ] satisfies Position[],
 
   projects: [
     {
+      name: "Nivram — AI assistant client",
+      kind: "React · React Native · Socket.IO · BrandDrive",
+      /** Nivram ships inside the BrandDrive app, so the store listing is its public proof. */
+      href: "https://apps.apple.com/app/branddrive/id1623910229",
+      points: [
+        "Architected streaming over Socket.IO after React Native's fetch proved to expose no readable response body, ruling out the standard web streaming approach on 1 of the 2 target platforms.",
+        "Hardened chunk merging against both delta and cumulative payload shapes, holding the socket handler in a ref so an in-flight reply survives a draft chat being promoted to a server thread mid-message.",
+        "Eliminated a class of half-parsed-payload bug by gating pressable controls behind a complete object while still streaming prose as markdown — a button built from a partial parse is a transfer with a missing field behind a confirm the user has already trusted.",
+      ],
+    },
+    {
+      name: "BrandDrive Mobile",
+      kind: "React Native · Expo · production fintech app",
+      href: "https://apps.apple.com/app/branddrive/id1623910229",
+      points: [
+        "Built 5 features into a live fintech app — theming, invoicing end to end, credit notes, the personal home screen and the app-lock overlay — and rebuilt the transfers interface and its internal logic.",
+        "Resolved Android bottom-sheet layout against the software keyboard and 3-button navigation bar by responding to measured device geometry instead of a constant that happens to be correct on 1 device.",
+        "Designed the personal dashboard around its 3 empty states — no wallet, no transaction PIN, a negative balance — because those are what a new user meets on their first morning.",
+      ],
+    },
+    {
+      name: "WhitePenguin",
+      kind: "Multi-tenant preschool platform · live in production",
+      href: "https://app.whitepenguin.co",
+      points: [
+        "Launched subdomain-based tenancy so a school resolves from the host rather than a client-side selection, removing 100% of client-controlled tenant routing and the cross-tenant data bugs that come with it.",
+        "Secured kiosk mode for a shared, unattended tablet behind 2 layers of identity — a 4-digit PIN or scanned code per person — with a logout that flushes pending attendance before clearing session keys.",
+        "Consolidated the admissions pipeline — forms, tour scheduling, leads and requests — plus room activities across 3 role surfaces into 1 codebase.",
+      ],
+    },
+    {
+      name: "Sanctuary Altar of Christ Ministry",
+      kind: "React · TypeScript · Firebase · Paystack · 8 months live",
+      href: "https://www.sanctuaryaltar.org",
+      points: [
+        "Led development as sole engineer across 3 surfaces — public site, admin dashboard and donation flow — shipping 116 commits and 12 managed collections, live and maintained for 8 months.",
+        "Migrated payment authority to a signature-verified Cloud Function webhook after an audit of my own flow found a browser closing mid-redirect could take money without recording it.",
+        "Prevented duplicate donation records by keying each document on the Paystack transaction reference, collapsing any number of retried webhook deliveries to 1 stored record.",
+        "Enforced authorisation in Firestore security rules rather than route guards, and hand-wrote a service worker across 3 caching strategies: network-first content, cache-first assets, video excluded.",
+      ],
+    },
+    {
       name: "Face-Recognition Door Access",
-      kind: "Full-stack IoT · final-year project",
+      kind: "React · Python · Flask · Raspberry Pi · final-year project",
       points: [
-        "Real-time facial recognition on a Raspberry Pi 4, matching on-device at a 0.40 distance threshold — no cloud inference and no face data leaving the box.",
-        "Flask control API driving a solenoid lock through a relay, with a background auto-lock deadline so a dropped request can never leave the door open.",
-        "React dashboard with a live MJPEG feed, remote unlock, face enrollment and an access log. 1.3 s match on-device; 800 ms end-to-end remote unlock.",
-      ],
-    },
-    {
-      name: "LysterPro",
-      kind: "Job platform",
-      href: "https://lysterpro.vercel.app/",
-      points: [
-        "Job board where employers post and applicants track, built in React and Tailwind.",
-        "Authentication, posting forms and application tracking, with React Query handling fetching and cache synchronisation across user and listing data.",
-      ],
-    },
-    {
-      name: "CVerify",
-      kind: "Certificate verification",
-      href: "https://cverify.vercel.app/",
-      points: [
-        "Web application for authenticating issued documents, with an administrative dashboard for managing verification records.",
-      ],
-    },
-    {
-      name: "Adaptive Control for Irrigation",
-      kind: "Mechatronics & data",
-      points: [
-        "Adaptive control algorithms optimising water distribution from live environmental inputs, modulating output rather than switching on fixed thresholds.",
+        "Achieved 1.3 s face matches and 800 ms end-to-end remote unlock running recognition entirely on-device on a Raspberry Pi 4 at a 0.40 distance threshold, with 0 face data leaving the device.",
+        "Automated fail-safe locking through a Flask control API driving a solenoid lock via relay, holding auto-lock on a background deadline so a dropped request can never leave a door open.",
+        "Deployed a React dashboard to Vercel against the device behind a tunnel, combining 4 capabilities: live MJPEG feed, remote unlock, face enrolment and an access log.",
       ],
     },
   ] satisfies ResumeProject[],
@@ -138,6 +254,11 @@ export const RESUME = {
     institution: "Afe Babalola University, Ado-Ekiti, Nigeria",
     award: "B.Eng, Mechatronics Engineering",
     span: "2020 — 2025",
-    coursework: ["Embedded Systems", "Control Systems", "Heat Transfer"],
+    coursework: [
+      "Embedded Systems",
+      "Control Systems",
+      "Instrumentation",
+      "Heat Transfer",
+    ],
   },
 } as const;
