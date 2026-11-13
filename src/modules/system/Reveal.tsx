@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 
 import { SecondOrder } from "@/core/control/second-order";
 import { MOTION, resolveMotion } from "@/design/motion";
@@ -42,6 +42,29 @@ export function Reveal({
     springRef.current.zeta = token.zeta;
     springRef.current.omegaN = token.omegaN;
   }, [reducedMotion]);
+
+  /**
+   * A returning visitor's boot flag is stamped onto <html> before hydration (see
+   * layout.tsx), and BootSequence checks it to skip the overlay entirely — but that
+   * overlay is the only thing that ever hid this entrance from a first-time visitor. On
+   * a first visit the full fade-in plays out behind an opaque boot screen and is never
+   * actually seen; without this check, a returning visitor has no such screen, so the
+   * exact same raw animation — every element arriving on its own schedule — plays out
+   * fully exposed instead of simply being there already. A layout effect runs before
+   * paint, so the snap itself is never a visible frame.
+   */
+  useLayoutEffect(() => {
+    if (document.documentElement.dataset.booted !== "1") return;
+
+    const node = ref.current;
+    springRef.current.snap(1);
+    finished.current = true;
+    if (node) {
+      node.style.opacity = "1";
+      node.style.transform = "";
+      node.style.willChange = "";
+    }
+  }, []);
 
   useSimulate((dt) => {
     if (finished.current) return;
