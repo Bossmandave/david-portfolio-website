@@ -23,6 +23,35 @@ const nextConfig: NextConfig = {
      */
     qualities: [75, 92],
   },
+
+  async rewrites() {
+    // /room and /room/ both serve the room's entry document.
+    return [
+      { source: "/room", destination: "/room/index.html" },
+      { source: "/room/", destination: "/room/index.html" },
+    ];
+  },
+
+  async headers() {
+    return [
+      {
+        // Baked lightmaps, textures, geometry and the vendored three.js build.
+        // These only change when the scene is re-baked, so a returning visitor
+        // should download none of them.
+        source: "/room/:dir(assets|libs)/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        // Application code changes more often than the assets do.
+        source: "/room/:path*.js",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=3600, must-revalidate" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
