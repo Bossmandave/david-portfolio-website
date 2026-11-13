@@ -33,9 +33,21 @@ export function RuntimeProvider({
       else runtime.start();
     };
 
+    // visibilitychange reliably fires when the page is hidden on the way out — including
+    // into the back/forward cache — but browsers don't reliably re-fire it when a bfcache
+    // entry is restored. `pageshow` with `persisted: true` is the actual signal for that,
+    // and without it the loop stays stopped forever: a page frozen mid-animation (a reveal
+    // that hadn't settled, a boot sequence that hadn't finished) stays frozen, because
+    // nothing ever requests another frame to continue it.
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) runtime.start();
+    };
+
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pageshow", onPageShow);
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pageshow", onPageShow);
       runtime.stop();
     };
   }, [runtime]);
