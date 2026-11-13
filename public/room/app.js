@@ -20,7 +20,7 @@ import { createGuestbook } from './src/guestbook.js';
 import { createFirebaseStore } from './src/backend.js';
 import { CONFIG } from './src/config.js';
 import { createCat } from './src/cat.js';
-import { createWalk } from './src/walk.js';
+import { createWalk, isTyping } from './src/walk.js';
 
 /* ------------------------------------------------------------------ constants */
 const LM_MAX = 8.0;
@@ -2054,6 +2054,7 @@ function wireUI() {
   });
   addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { ui.notes.classList.remove('on'); closePanel(); exitGlobe(); }
+    if (isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return;
     const n = +e.key;
     const keys = ['hero', 'fire', 'window', 'sofa', 'shelf'];
     if (n >= 1 && n <= 5) setView(keys[n - 1]);

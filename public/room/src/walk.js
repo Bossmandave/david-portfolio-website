@@ -13,6 +13,13 @@ const RADIUS = 0.26;
 const SPEED = 1.5;
 const RUN = 2.45;
 
+export function isTyping(e) {
+  const t = e.target;
+  if (!t || !t.tagName) return false;
+  if (t.isContentEditable || t.tagName === 'TEXTAREA') return true;
+  return t.tagName === 'INPUT' && !/^(range|checkbox|radio|button)$/.test(t.type);
+}
+
 export function createWalk(camera, dom, phys) {
   const pos = new THREE.Vector3();
   const vel = new THREE.Vector3();
@@ -27,7 +34,7 @@ export function createWalk(camera, dom, phys) {
   const _f = new THREE.Vector3(), _r = new THREE.Vector3(), _want = new THREE.Vector3();
 
   function onKey(e, down) {
-    if (!active) return;
+    if (!active || (down && isTyping(e))) return;
     const k = e.key.toLowerCase();
     if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'].includes(k)) {
       if (down) keys.add(k); else keys.delete(k);
