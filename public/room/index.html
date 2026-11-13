@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- BASE PATH -----------------------------------------------------------
+     Every asset in this page is referenced relatively ("./assets/..."), so
+     this one line decides where the room looks for its files.
+
+       hosted at  example.com/room/   ->  <base href="/room/">   (default)
+       hosted at  example.com/        ->  delete this line entirely
+       hosted at  example.com/3d/     ->  <base href="/3d/">
+
+     Keep the trailing slash. Without it the browser treats the last segment
+     as a filename and strips it, and all 100-odd assets 404.
+------------------------------------------------------------------------- -->
+<base href="/room/" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+<title>The Room — Agodi David</title>
+<link rel="canonical" href="https://agodidavid.dev/room/" />
+<link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="The Room — Agodi David" />
+<meta property="og:description" content="A real-time interior in the browser: Blender-baked global illumination, procedural materials, a live sun, and nine projects on a shelf." />
+<meta property="og:url" content="https://agodidavid.dev/room/" />
+<meta property="og:image" content="https://agodidavid.dev/room/assets/og.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="The Room — Agodi David" />
+<meta name="twitter:description" content="Blender-baked global illumination running in a browser. Walk it, knock things over, sign the book." />
+<meta name="twitter:image" content="https://agodidavid.dev/room/assets/og.jpg" />
+<meta name="theme-color" content="#0b0a09" />
+<meta name="description" content="A real-time interior in the browser: Blender-baked global illumination, procedural materials, a live sun, and nine projects on a shelf." />
+<style>
+  :root{
+    --bg:#0b0a09; --ink:#f2ede6; --muted:#a79e92; --line:rgba(242,237,230,.14);
+    --line-2:rgba(242,237,230,.08); --accent:#e8a35c; --panel:rgba(14,12,11,.74);
+    --sans:"Inter","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    overflow:hidden;overscroll-behavior:none;touch-action:none}
+  canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+  /* ---------------- loader ---------------- */
+  #load{position:fixed;inset:0;z-index:80;background:#0b0a09;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    transition:opacity .9s ease .15s,visibility .9s;padding:24px}
+  #load.done{opacity:0;visibility:hidden}
+  .l-mark{font-family:var(--serif);font-size:clamp(28px,5vw,46px);letter-spacing:.02em;
+    font-style:italic;opacity:.95;text-align:center}
+  .l-sub{font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);text-align:center}
+  .l-bar{width:min(260px,56vw);height:1px;background:var(--line);position:relative;overflow:hidden}
+  .l-bar i{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);
+    background:linear-gradient(90deg,var(--accent),#f3d7b4);transition:transform .35s ease}
+  .l-pct{font-size:11px;letter-spacing:.2em;color:var(--muted);font-variant-numeric:tabular-nums}
+  #enter{margin-top:4px;padding:13px 32px;border:1px solid var(--line);border-radius:999px;
+    font-size:11px;letter-spacing:.28em;text-transform:uppercase;opacity:0;pointer-events:none;
+    transition:opacity .5s,background .25s,border-color .25s}
+  #enter.on{opacity:1;pointer-events:auto}
+  #enter:hover{background:rgba(242,237,230,.07);border-color:rgba(242,237,230,.4)}
+
+  /* ---------------- chrome ---------------- */
+  .ui{position:fixed;z-index:30;pointer-events:none;opacity:0;transition:opacity 1s ease .3s}
+  .ui.on{opacity:1}
+  .ui>*{pointer-events:auto}
+  body.focus-mode #bottom{opacity:.22;pointer-events:none}
+
+  #top{top:0;left:0;right:0;padding:clamp(14px,2.2vw,28px);display:flex;
+    justify-content:space-between;align-items:flex-start;gap:12px}
+  .brand h1{margin:0;font-family:var(--serif);font-weight:400;font-style:italic;
+    font-size:clamp(17px,2.1vw,23px);letter-spacing:.01em}
+  .brand p{margin:3px 0 0;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+  .topright{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+  .chip{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border:1px solid var(--line);
+    border-radius:999px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    background:var(--panel);backdrop-filter:blur(14px);transition:.22s;color:var(--muted);white-space:nowrap}
+  .chip:hover{color:var(--ink);border-color:rgba(242,237,230,.34)}
+  .chip[aria-pressed="true"]{color:#120f0d;background:var(--ink);border-color:var(--ink)}
+  .chip .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.5}
+  .chip[aria-pressed="true"] .dot{opacity:1;background:var(--accent)}
+
+  #bottom{left:0;right:0;bottom:0;padding:clamp(12px,2vw,24px);
+    padding-bottom:calc(clamp(12px,2vw,24px) + var(--safe-b));
+    display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;
+    transition:opacity .4s}
+  .col{display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;
+    background:var(--panel);backdrop-filter:blur(14px)}
+  .seg button{padding:8px 13px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);transition:.22s;white-space:nowrap}
+  .seg button+button{border-left:1px solid var(--line-2)}
+  .seg button:hover{color:var(--ink)}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:#120f0d}
+
+  .timewrap{display:flex;align-items:center;gap:11px;padding:7px 15px 7px 13px;border:1px solid var(--line);
+    border-radius:999px;background:var(--panel);backdrop-filter:blur(14px)}
+  #timeLabel{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);
+    min-width:84px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:clamp(110px,16vw,190px);height:18px;
+    background:transparent;cursor:ew-resize}
+  input[type=range]::-webkit-slider-runnable-track{height:1px;
+    background:linear-gradient(90deg,#9fc2ef,#e8c489,#e8893c,#5b4a73,#1d2742)}
+  input[type=range]::-moz-range-track{height:1px;
+    background:linear-gradient(90deg,#9fc2ef,#e8c489,#e8893c,#5b4a73,#1d2742)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;
+    background:var(--ink);margin-top:-5px;box-shadow:0 0 0 3px rgba(11,10,9,.8)}
+  input[type=range]::-moz-range-thumb{width:11px;height:11px;border:0;border-radius:50%;
+    background:var(--ink);box-shadow:0 0 0 3px rgba(11,10,9,.8)}
+
+  /* retractable chrome */
+  #bottom{transition:opacity .4s,transform .5s cubic-bezier(.22,1,.36,1)}
+  #bottom.tucked{transform:translateY(calc(100% + 18px));opacity:0;pointer-events:none}
+  #chromeTab{position:fixed;left:50%;bottom:calc(6px + var(--safe-b));transform:translateX(-50%);
+    z-index:31;display:flex;align-items:center;gap:7px;padding:5px 14px 6px;
+    border:1px solid var(--line);border-radius:999px;background:var(--panel);
+    backdrop-filter:blur(14px);color:var(--muted);font-size:9px;letter-spacing:.2em;
+    text-transform:uppercase;opacity:0;transition:opacity .5s,color .2s,bottom .5s cubic-bezier(.22,1,.36,1)}
+  #chromeTab.on{opacity:.75}
+  #chromeTab:hover{color:var(--ink);opacity:1}
+  #chromeTab svg{transition:transform .45s cubic-bezier(.22,1,.36,1)}
+  #chromeTab[aria-expanded="true"]{bottom:calc(clamp(12px,2vw,24px) + 104px + var(--safe-b))}
+  #chromeTab[aria-expanded="true"] svg{transform:rotate(180deg)}
+  #chromeTab[aria-expanded="true"] span{display:none}
+  body.focus-mode #chromeTab{opacity:.3}
+  .grab{display:none}
+
+  #hint{position:fixed;left:50%;bottom:calc(150px + var(--safe-b));transform:translateX(-50%);z-index:29;
+    font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);
+    pointer-events:none;opacity:0;transition:opacity .6s;text-align:center;line-height:1.9;
+    max-width:min(90vw,520px)}
+  #hint.on{opacity:.75}
+
+  #tip{position:fixed;z-index:28;padding:6px 11px;border:1px solid var(--line);border-radius:999px;
+    background:var(--panel);backdrop-filter:blur(12px);font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;pointer-events:none;opacity:0;transform:translate(-50%,-165%);
+    transition:opacity .2s;white-space:nowrap}
+  #tip.on{opacity:1}
+
+  /* ---------------- world hints ---------------- */
+  #hints{position:fixed;inset:0;z-index:27;pointer-events:none;opacity:0;transition:opacity .8s}
+  #hints.on{opacity:1}
+  #hints.hints-off{opacity:0;pointer-events:none}
+  .hint{position:absolute;transform:translate(-50%,-50%);display:none;align-items:center;gap:8px;
+    pointer-events:auto;padding:0;background:none;border:0}
+  .hint i{width:13px;height:13px;border-radius:50%;border:1px solid rgba(242,237,230,.6);
+    position:relative;flex:none;background:rgba(10,9,8,.3);backdrop-filter:blur(3px)}
+  .hint i::after{content:"";position:absolute;inset:3.5px;border-radius:50%;background:var(--accent)}
+  .hint i::before{content:"";position:absolute;inset:-1px;border-radius:50%;
+    border:1px solid rgba(232,163,92,.75);animation:pulse 2.6s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(1);opacity:.85}70%{transform:scale(2.3);opacity:0}100%{opacity:0}}
+  .hint span{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    opacity:0;transform:translateX(-5px);transition:.25s;white-space:nowrap;
+    text-shadow:0 1px 6px rgba(0,0,0,.9)}
+  .hint:hover span{opacity:1;transform:none}
+  .hint:hover i{border-color:var(--ink)}
+  @media (hover:none){.hint span{opacity:.85;transform:none}}
+
+  /* ---------------- side panels ---------------- */
+  #notes,#panel{position:fixed;top:0;right:0;bottom:0;width:min(430px,90vw);z-index:40;
+    background:rgba(11,10,9,.94);backdrop-filter:blur(22px);border-left:1px solid var(--line);
+    transform:translateX(101%);transition:transform .62s cubic-bezier(.22,1,.36,1);
+    overflow-y:auto;padding:clamp(22px,3.4vw,38px);-webkit-overflow-scrolling:touch}
+  #notes.on,#panel.on{transform:none}
+  #notes h2,#panel h2{margin:0 0 4px;font-family:var(--serif);font-style:italic;font-weight:400;font-size:25px}
+  #notes .sub{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);margin-bottom:24px}
+  #notes section{padding:16px 0;border-top:1px solid var(--line-2)}
+  #notes h3{margin:0 0 7px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+  #notes p,#panel p{margin:0 0 10px;font-size:13.5px;line-height:1.68;color:#d5cec4}
+  #notes code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+    color:#f0d6ae;background:rgba(232,163,92,.09);padding:1px 5px;border-radius:4px}
+  #notes ul{margin:0;padding-left:17px}
+  #notes li{font-size:13.5px;line-height:1.66;color:#d5cec4;margin-bottom:5px}
+  .pclose{position:absolute;top:15px;right:17px;width:30px;height:30px;border:1px solid var(--line);
+    border-radius:50%;display:grid;place-items:center;font-size:15px;color:var(--muted);z-index:2}
+  .pclose:hover{color:var(--ink)}
+  .kv{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:4px 0;color:var(--muted)}
+  .kv b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+  .p-kind{font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+  .p-stack{margin-top:14px;padding-top:13px;border-top:1px solid var(--line-2);
+    font-size:11px;letter-spacing:.1em;color:var(--muted)}
+  .p-link{display:inline-block;margin-top:16px;padding:9px 17px;border:1px solid var(--line);
+    border-radius:999px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink);text-decoration:none;transition:.22s}
+  .p-link:hover{background:rgba(242,237,230,.08);border-color:rgba(242,237,230,.4)}
+
+  #stats{position:fixed;left:clamp(12px,2vw,24px);bottom:calc(clamp(12px,2vw,24px) + 96px + var(--safe-b));
+    z-index:29;font-size:9.5px;letter-spacing:.12em;color:var(--muted);opacity:0;transition:opacity .4s;
+    font-variant-numeric:tabular-nums;pointer-events:none}
+  #stats.on{opacity:.45}
+
+  /* panels become a bottom sheet on narrow screens so the subject stays visible */
+  @media (max-width:900px){
+    #panel{top:auto;left:0;right:0;bottom:0;width:auto;height:auto;max-height:min(58vh,480px);
+      border-left:0;border-top:1px solid var(--line);border-radius:18px 18px 0 0;
+      transform:translateY(101%);padding:22px 20px calc(20px + var(--safe-b));
+      box-shadow:0 -24px 60px rgba(0,0,0,.55)}
+    #panel.on{transform:none}
+    #panel .grab{display:block;position:absolute;top:8px;left:50%;transform:translateX(-50%);
+      width:38px;height:4px;border-radius:999px;background:rgba(242,237,230,.22)}
+    #panel h2{margin-top:6px;font-size:21px}
+    #panel p{font-size:13px}
+    .pclose{top:12px;right:14px}
+    #notes{width:100vw;border-left:0}
+  }
+  @media (max-width:860px){
+    #bottom{flex-direction:column;align-items:stretch;gap:9px}
+    .row{justify-content:center}
+    .col{align-items:center}
+    .brand p{display:none}
+    #stats{display:none}
+    #hint{display:none}
+    #chromeTab[aria-expanded="true"]{bottom:calc(clamp(12px,2vw,24px) + 150px + var(--safe-b))}
+    input[type=range]{width:min(44vw,180px)}
+  }
+  .chip.tidy { display:inline-flex; align-items:center; gap:.4em; }
+  .chip.tidy svg { width:.95em; height:.95em; opacity:.85; }
+  .chip.tidy:disabled { opacity:.34; cursor:default; }
+  .chip.tidy.on { border-color: rgba(255,186,120,.55); color:#ffd9ad; }
+  .g-list{margin:14px 0 18px;max-height:34vh;overflow:auto}
+  .g-row{padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;line-height:1.5}
+  .g-row b{display:block;color:#f0e8dc;font-weight:500;letter-spacing:.01em}
+  .g-row span{color:#c8bdae}
+  .g-row i{display:block;margin-top:3px;font-size:11px;color:#8c8276;font-style:normal;
+    letter-spacing:.06em;text-transform:uppercase}
+  .g-muted{color:#9a9082}
+  .g-form{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+  .g-form input,.g-form textarea{font:inherit;font-size:13.5px;color:#f0e8dc;
+    background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:9px;
+    padding:9px 11px;outline:none;resize:none}
+  .g-form input:focus,.g-form textarea:focus{border-color:rgba(255,200,150,.45)}
+  .g-form button{align-self:flex-start;font-size:12px;letter-spacing:.09em;
+    text-transform:uppercase;color:#1a1713;background:#e8dcc9;border-radius:999px;
+    padding:9px 17px;margin-top:2px}
+  .g-form button:hover{background:#fff}
+  .g-msg{font-size:12px;color:#b8ad9e;min-height:1em}
+  body.walking #viewSeg{opacity:.35;pointer-events:none}
+  body.walking canvas{cursor:crosshair}
+  body.walking #walkHelp{opacity:1}
+  #walkHelp{position:fixed;left:50%;bottom:calc(clamp(12px,2vw,24px) + 92px + var(--safe-b));
+    transform:translateX(-50%);opacity:0;transition:opacity .5s ease;pointer-events:none;
+    font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#bdb2a2;
+    background:rgba(16,13,10,.62);border:1px solid var(--line);border-radius:999px;
+    padding:7px 15px;backdrop-filter:blur(8px);white-space:nowrap;z-index:6}
+  @media (max-width:860px){ #walkHelp{font-size:10.5px;padding:6px 12px} }
+  #walkHelp .mb{display:none}
+  @media (pointer:coarse),(max-width:900px){ #walkHelp .dk{display:none} #walkHelp .mb{display:inline} }
+  /* walk-mode joystick: a real element, above the bottom bar so it is
+     thumb-reachable and does not fight the time slider */
+  #walkStick{position:fixed;left:20px;bottom:calc(var(--safe-b) + 34px);
+    width:112px;height:112px;border-radius:50%;display:none;z-index:32;
+    border:1px solid var(--line);background:rgba(18,15,12,.40);
+    backdrop-filter:blur(10px);touch-action:none;-webkit-user-select:none;user-select:none}
+  #walkStick.on{display:block}
+  #walkStick i{position:absolute;left:50%;top:50%;width:46px;height:46px;border-radius:50%;
+    background:rgba(240,232,220,.28);border:1px solid rgba(240,232,220,.42);
+    transform:translate(-50%,-50%);transition:background .18s}
+  #walkStick.live i{background:rgba(240,232,220,.54)}
+  @media (pointer:fine) and (min-width:901px){#walkStick{display:none !important}}
+
+  /* the bar grew: let the view pills scroll instead of running off the screen */
+  @media (max-width:860px){
+    .seg{max-width:calc(100vw - 26px);overflow-x:auto;scrollbar-width:none;
+      -webkit-overflow-scrolling:touch}
+    .seg::-webkit-scrollbar{display:none}
+    .seg button{flex:0 0 auto;padding:8px 11px;font-size:9.5px;letter-spacing:.11em}
+    .chip{padding:8px 12px;font-size:9.5px;letter-spacing:.11em}
+    .row{gap:6px}
+    #bottom{gap:8px}
+    #walkHelp{bottom:calc(var(--safe-b) + 172px)}
+  }
+  /* walking hands the screen over: the bar tucks away on touch and comes back
+     from the chevron, with one obvious way out */
+  #btnExitWalk{display:none}
+  body.walking #btnExitWalk{display:inline-flex;border-color:rgba(255,186,120,.5);color:#ffd9ad}
+</style>
+</head>
+<body>
+
+<div id="load">
+  <div class="l-mark">The Room</div>
+  <div class="l-sub">Agodi David &middot; selected work</div>
+  <div class="l-bar"><i id="lbar"></i></div>
+  <div class="l-pct" id="lpct">0%</div>
+  <button id="enter">Enter</button>
+</div>
+
+<div class="ui" id="top">
+  <div class="brand">
+    <h1>The Room</h1>
+    <p>Blender &rarr; WebGL &middot; baked GI</p>
+  </div>
+  <div class="topright">
+    <button class="chip" id="btnExitWalk">Exit walk</button>
+    <button class="chip" id="sound" aria-pressed="false">Sound off</button>
+    <button class="chip" id="btnNotes">How it's made</button>
+  </div>
+</div>
+
+<div class="ui" id="bottom">
+  <div class="col">
+    <div class="row">
+      <div class="timewrap">
+        <span id="timeLabel">Afternoon</span>
+        <input id="timeRange" type="range" min="0" max="1000" value="400" aria-label="Time of day" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="seg" id="weatherSeg">
+        <button data-weather="clear" aria-pressed="true">Clear</button>
+        <button data-weather="overcast" aria-pressed="false">Overcast</button>
+        <button data-weather="rain" aria-pressed="false">Rain</button>
+        <button data-weather="snow" aria-pressed="false">Snow</button>
+      </div>
+    </div>
+  </div>
+  <div class="col" style="align-items:flex-end">
+    <div class="row">
+      <button class="chip" id="btnFire" aria-pressed="true"><span class="dot"></span>Fire</button>
+      <button class="chip" id="btnLamp" aria-pressed="false"><span class="dot"></span>Lamp</button>
+      <button class="chip" id="btnCurtain" aria-pressed="false"><span class="dot"></span>Curtains</button>
+    </div>
+    <div class="row">
+      <div class="seg" id="viewSeg">
+        <button data-view="hero" aria-pressed="true">Hero</button>
+        <button data-view="fire" aria-pressed="false">Hearth</button>
+        <button data-view="art" aria-pressed="false">Portrait</button>
+        <button data-view="window" aria-pressed="false">Window</button>
+        <button data-view="sofa" aria-pressed="false">Sofa</button>
+        <button data-view="shelf" aria-pressed="false">Shelf</button>
+      </div>
+      <button class="chip" id="btnQual">Quality: High</button>
+      <button class="chip" id="btnWalk" aria-pressed="false">Walk</button>
+      <button class="chip" id="btnBook">Visitor book</button>
+      <button class="chip tidy" id="btnTidy" disabled title="Nothing to tidy">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 7.4A5.6 5.6 0 1 1 12 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12.4 1v3h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Tidy up</button>
+    </div>
+  </div>
+</div>
+
+<button id="chromeTab" class="ui on" aria-expanded="true" aria-label="Toggle controls">
+  <svg viewBox="0 0 16 10" width="15" height="9" aria-hidden="true">
+    <path d="M1 8.5 L8 2 L15 8.5" fill="none" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span>Controls</span>
+</button>
+
+<div id="hint">Drag to look &middot; pinch or scroll to pull back &middot; tap the markers</div>
+<div id="tip"></div>
+<div id="hints"></div>
+<div id="walkHelp"><span class="dk">Drag to look · W A S D to move · Shift to hurry</span><span class="mb">Drag to look · stick to move</span></div>
+<div id="stats"></div>
+
+<aside id="panel">
+  <div class="grab" id="panelGrab"></div>
+  <button class="pclose" id="panelClose" aria-label="Close">&times;</button>
+  <div id="panelBody"></div>
+</aside>
+
+<aside id="notes">
+  <button class="pclose" id="close" aria-label="Close">&times;</button>
+  <h2>How it's made</h2>
+  <div class="sub">Pipeline notes</div>
+
+  <section>
+    <h3>The idea</h3>
+    <p>Real-time renderers cannot afford to trace bounced light. So the slow, beautiful part is
+       computed once in Blender and stored in textures; the browser replays it at 60fps and adds
+       only what has to be live — sunlight, reflections, glow and the fire.</p>
+  </section>
+
+  <section>
+    <h3>Geometry</h3>
+    <p>Every object is generated procedurally by a Python script against Blender's
+       <code>bmesh</code> API — no modelling by hand. Walls, joinery, the sofa's cushions, the
+       globe's meridian ring and the plant's leaves are all code, so the room can be
+       re-proportioned by changing a number. Vessels — the bowl, the mug, the planter — are
+       lathed from 2-D profiles, so they are hollow and have a real lip rather than a capped
+       cylinder's flat disc.</p>
+    <div class="kv"><span>Draw calls</span><b id="kDraw">—</b></div>
+    <div class="kv"><span>Triangles</span><b id="kTri">—</b></div>
+  </section>
+
+  <section>
+    <h3>Materials</h3>
+    <p>Textures are written pixel by pixel with NumPy: oak grain stretched along each board,
+       plain-weave linen built from interleaved thread profiles, travertine with vermiculation
+       and sedimentary banding. Normal maps come from the height fields through a five-tap
+       filter, so relief reads without speckle.</p>
+    <p>The globe is real: Natural Earth coastlines and borders drawn to an equirectangular
+       parchment map, with Lithuania picked out in gold leaf.</p>
+  </section>
+
+  <section>
+    <h3>Light, baked and live</h3>
+    <p>Eight channels were path-traced separately into one shared UV atlas — sky, three sun
+       positions, lamp, moonlight, fire, and ambient occlusion gathered at 42&nbsp;cm so a sealed
+       room doesn't bake solid black.</p>
+    <p>Every frame, those channels are composited on the GPU into a single lightmap with live
+       weights. Dragging the time of day re-mixes the bake while a real shadow-mapped sun swings
+       overhead, so window bars throw crisp shadows the atlas could never hold. Closing the
+       curtains attenuates the daylight channels directly.</p>
+    <p>Values exceed 1.0, so the atlas ships RGBM-encoded and is decoded during the
+       composite. The multiplier rides in the alpha channel, which is why the
+       lightmaps are lossless WebP while the material textures are lossy — a
+       quantised multiplier would band the radiance badly.</p>
+  </section>
+
+  <section>
+    <h3>Live on top</h3>
+    <ul>
+      <li>God rays: a thresholded radial blur masked to the window</li>
+      <li>Dust that only lights inside the shaft, and parts around the cursor</li>
+      <li>A pull cord simulated as a verlet chain — grab it, it stretches and snaps back</li>
+      <li>Sparks with buoyancy and drag when the fire is poked</li>
+      <li>An environment probe captured from inside the room, refreshed when the light changes</li>
+      <li>Room sound synthesised in WebAudio — filtered noise and scheduled crackles, no audio files</li>
+      <li>A wall clock on the hour you are actually reading this: the dial and case are
+          baked, only the hands are live</li>
+      <li>Steam off the mug that thins out as the tea goes cold</li>
+    </ul>
+  </section>
+
+  <section>
+    <h3>Two ways to look</h3>
+    <p>An orbit camera turns around a fixed pivot, which frames a room well and
+       explores it badly — you are held at one point and spun. <b>Walk</b> puts
+       you inside at eye height: drag to look, WASD or the thumbstick to move.
+       Collision was almost free, because the physics layer already knows where
+       the floor, the walls and the furniture are; a capsule is resolved against
+       the same boxes the props fall onto.</p>
+  </section>
+
+  <section>
+    <h3>The visitor book</h3>
+    <p>A portfolio room is read-only by nature: people look, then leave, and you
+       never know they came. The book on the shelf runs the other way. It is open
+       to anyone — no sign-in, no email — because a book you have to register for
+       is a book nobody signs.</p>
+    <p>Entries live in Firestore, reached over its REST API rather than the
+       Firebase SDK: no hundred-kilobyte dependency and no build step. Anonymous
+       auth gives each visitor an id without asking them for anything, and every
+       constraint that matters — one row per person, create and edit your own
+       only, never delete, field lengths pinned — is enforced in the security
+       rules, where a client cannot argue with it.</p>
+  </section>
+
+  <section>
+    <h3>Things that fall over</h3>
+    <p>The loose objects are real rigid bodies. Tap one and it takes the impulse where you
+       touched it, so it topples rather than wobbles; drag one and it follows your pointer on a
+       constraint, keeping the momentum when you let go. Books can be pulled straight off the
+       shelf.</p>
+    <p>A baked lightmap assumes nothing moves, so the solver is lazy: a body exists only while
+       its object is away from home, the world steps only while something is awake, and an
+       object that settles goes back to being ordinary static geometry. As a thing leaves the
+       spot it was baked in, its share of the bake fades out and the environment probe takes
+       over. <b>Tidy up</b> puts everything back.</p>
+  </section>
+
+  <section>
+    <h3>Soft furnishings</h3>
+    <p>Cushions are not rounded boxes. Each one is blended toward its circumscribed ellipsoid so
+       every panel bulges, then the eight sewn corners are drawn back in to give the little ears
+       a stuffed cushion has, and the seat cushions carry a dip from being sat on. Welt cord is
+       swept along the arm seams.</p>
+    <p>The throws are not modelled at all — they are dropped onto the real sofa geometry and
+       simulated with Blender's cloth solver, then frozen where they landed, so the folds are
+       the ones the fabric actually fell into.</p>
+  </section>
+
+  <section>
+    <h3>Controls</h3>
+    <ul>
+      <li>Drag to orbit; scroll or pinch to pull back — past the walls the lens widens instead</li>
+      <li>Tap the markers, or the hearth, the cord, the globe and the books directly</li>
+      <li>Tap a loose object to knock it over, or drag it anywhere; pull books off the shelf</li>
+      <li><b>Walk</b> to step inside; drag to look, <code>W A S D</code> to move</li>
+      <li><b>Tidy up</b> returns everything to where it started</li>
+      <li><code>1</code>–<code>5</code> views, <code>F</code> fire, <code>L</code> lamp,
+          <code>C</code> curtains, <code>G</code> globe, <code>H</code> hide the controls,
+          <code>Esc</code> back</li>
+      <li>Append <code>?time=0.9&amp;view=fire&amp;weather=rain</code> to share a state</li>
+    </ul>
+  </section>
+
+  <section>
+    <h3>Built with</h3>
+    <div class="kv"><span>Modelling &amp; bake</span><b>Blender / Cycles</b></div>
+    <div class="kv"><span>Textures &amp; maps</span><b>NumPy · Pillow · Natural Earth</b></div>
+    <div class="kv"><span>Runtime</span><b>three.js r187</b></div>
+    <div class="kv"><span>Transport</span><b>glTF 2.0</b></div>
+  </section>
+</aside>
+
+<script type="importmap">
+{ "imports": {
+    "three": "./libs/three.module.js",
+    "three/webgpu": "./libs/three.module.js",
+    "three/tsl": "./libs/three.module.js",
+    "three/addons/": "./libs/addons/",
+    "cannon-es": "./libs/cannon-es.js"
+} }
+</script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
