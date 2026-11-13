@@ -80,7 +80,7 @@ export const RESUME = {
     /** Filled in when supplied — the renderer omits anything blank rather than printing a gap. */
     linkedin: "linkedin.com/in/david-uchenna-agodi-369a88283",
     location: "Vilnius, Lithuania",
-    portfolio: "agodidavid.vercel.app",
+    portfolio: "agodidavid.dev/room",
   },
 
   /**

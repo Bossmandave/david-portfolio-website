@@ -78,6 +78,24 @@ export function SystemModule() {
               </span>
             </Link>
           </Reveal>
+
+          {/* A plain anchor, not <Link> — the room is a standalone static build outside
+              the app router, reached via a next.config rewrite rather than a page, and a
+              soft client transition has nothing there to transition to. */}
+          <Reveal delay={0.8} distance={10} className="mt-4">
+            <a
+              href="/room"
+              className="group flex items-baseline gap-3 font-mono text-[11px] tracking-[0.12em] text-ink-faint transition-colors hover:text-ink focus:outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-response"
+            >
+              <span>Module 07 — The Room · ~8 MB phone, 13 MB desktop</span>
+              <span
+                aria-hidden
+                className="text-response opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100"
+              >
+                enter →
+              </span>
+            </a>
+          </Reveal>
         </div>
       </main>
 
