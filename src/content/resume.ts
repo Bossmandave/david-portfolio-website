@@ -21,6 +21,15 @@ export interface ResumeProject {
   href?: string;
 }
 
+export interface EducationEntry {
+  institution: string;
+  award: string;
+  /** "2020 — 2025" — a parser wants years, not months, for a degree span. */
+  span: string;
+  /** Omitted entirely when there's nothing distinctive to list yet. */
+  coursework?: string[];
+}
+
 /**
  * The CV as data.
  *
@@ -62,16 +71,16 @@ export const RESUME = {
    * which spent two lines before saying anything a reader could use.
    */
   summary:
-    "Frontend Engineer with 3+ years building production web and mobile interfaces in React, Next.js, TypeScript and React Native. Currently at BrandDrive, where I own the client for an AI assistant that streams model output over WebSockets and renders it into 70+ reviewable actions calling the same production endpoints as the app itself, shipped across a 12-person React Native codebase. Mechatronics background in embedded systems and control, so I work comfortably at the seam between physical systems and the web.",
+    "Frontend Engineer with 3+ years building production web and mobile interfaces in React, Next.js, TypeScript and React Native. Most recently at BrandDrive, where I owned the client for an AI assistant that streamed model output over WebSockets and rendered it into 70+ reviewable actions calling the same production endpoints as the app itself, shipped across a 12-person React Native codebase. Mechatronics background in embedded systems and control, so I work comfortably at the seam between physical systems and the web.",
 
   contact: {
     email: "agodidavid004@gmail.com",
-    phone: "+234 907 160 4370",
+    phone: "+370 662 13 951",
     github: "github.com/Bossmandave",
     /** Filled in when supplied — the renderer omits anything blank rather than printing a gap. */
-    linkedin: "",
-    location: "",
-    portfolio: "",
+    linkedin: "linkedin.com/in/david-uchenna-agodi-369a88283",
+    location: "Vilnius, Lithuania",
+    portfolio: "agodidavid.vercel.app",
   },
 
   /**
@@ -156,8 +165,9 @@ export const RESUME = {
     {
       role: "Frontend Engineer",
       org: "BrandDrive",
-      start: "2025",
-      end: "Present",
+      location: "Nigeria (hybrid)",
+      start: "Nov 2025",
+      end: "Aug 2026",
       points: [
         "Owned the client for Nivram, the company's AI assistant, across 2 platforms — the web interaction layer end to end, and on React Native both the streaming shell and the layer it feeds.",
         "Engineered a Socket.IO streaming pipeline that coalesces tokens into 1 render per animation frame, cutting re-renders by ~90% at peak load (600 tokens/second collapse to 60 renders) and holding a steady 60 fps repaint.",
@@ -167,31 +177,43 @@ export const RESUME = {
       ],
     },
     {
-      role: "Frontend Developer Intern",
-      org: "Juray Smart Solutions Ltd",
-      points: [
-        "Developed and maintained client-facing React interfaces against REST APIs, translating Figma handoffs into responsive components.",
-      ],
-    },
-    {
       role: "Web Development Intern",
       org: "Zidio Web Development",
+      location: "Remote",
+      start: "Jul 2024",
+      end: "Oct 2024",
       points: [
         "Implemented responsive web interfaces in HTML, CSS and JavaScript, reviewing all work into a shared Git repository through pull requests.",
       ],
     },
     {
-      role: "Robotics Intern",
-      org: "Baun Robotics Educational Solutions",
+      role: "STEM Collaborator",
+      org: "3D Robotics",
+      location: "Nigeria",
+      start: "Jun 2024",
+      end: "Oct 2024",
       points: [
-        "Programmed and assembled robotics teaching kits, and ran hands-on STEM workshops for secondary-school students.",
+        "Integrated web technologies with cloud platforms for interactive STEM learning tools.",
       ],
     },
     {
-      role: "STEM Collaborator",
-      org: "3D Robotronics",
+      role: "Frontend Developer Intern",
+      org: "Juray Smart Solutions Ltd",
+      location: "Nigeria",
+      start: "Feb 2024",
+      end: "Jun 2024",
       points: [
-        "Integrated web technologies with cloud platforms for interactive STEM learning tools.",
+        "Developed and maintained client-facing React interfaces against REST APIs, translating Figma handoffs into responsive components.",
+      ],
+    },
+    {
+      role: "Robotics Intern",
+      org: "Baun Robotics Educational Solutions",
+      location: "Nigeria",
+      start: "Jun 2022",
+      end: "Oct 2022",
+      points: [
+        "Programmed and assembled robotics teaching kits, and ran hands-on STEM workshops for secondary-school students.",
       ],
     },
   ] satisfies Position[],
@@ -250,15 +272,22 @@ export const RESUME = {
     },
   ] satisfies ResumeProject[],
 
-  education: {
-    institution: "Afe Babalola University, Ado-Ekiti, Nigeria",
-    award: "B.Eng, Mechatronics Engineering",
-    span: "2020 — 2025",
-    coursework: [
-      "Embedded Systems",
-      "Control Systems",
-      "Instrumentation",
-      "Heat Transfer",
-    ],
-  },
+  education: [
+    {
+      institution: "Vilnius Gediminas Technical University (Vilnius Tech), Lithuania",
+      award: "M.Eng, Mechatronics, Robotics, and Automation Engineering",
+      span: "2026 — Present",
+    },
+    {
+      institution: "Afe Babalola University, Ado-Ekiti, Nigeria",
+      award: "B.Eng, Mechatronics Engineering",
+      span: "2020 — 2025",
+      coursework: [
+        "Embedded Systems",
+        "Control Systems",
+        "Instrumentation",
+        "Heat Transfer",
+      ],
+    },
+  ] satisfies EducationEntry[],
 } as const;

@@ -26,8 +26,14 @@ export const CHANNELS: Channel[] = [
   {
     id: "phone",
     label: "Phone",
-    value: "+234 907 160 4370",
-    href: "tel:+2349071604370",
+    value: "+370 662 13 951",
+    href: "tel:+37066213951",
     copyable: true,
+  },
+  {
+    id: "linkedin",
+    label: "LinkedIn",
+    value: "linkedin.com/in/david-uchenna-agodi-369a88283",
+    href: "https://linkedin.com/in/david-uchenna-agodi-369a88283",
   },
 ];

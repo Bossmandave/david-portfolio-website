@@ -213,16 +213,24 @@ export function ResumeModule({ pdfHref }: { pdfHref: string | null }) {
           </Section>
 
           <Section label="Education">
-            <p className="font-mono text-[14px] leading-snug text-ink">
-              {RESUME.education.award}
-            </p>
-            <p className="mt-0.5 text-[13px] leading-snug text-ink-dim">
-              {RESUME.education.institution}
-              <span className="text-ink-faint"> · {RESUME.education.span}</span>
-            </p>
-            <p className="mt-2 text-[13px] leading-[1.6] text-ink-faint">
-              Relevant coursework: {RESUME.education.coursework.join(", ")}
-            </p>
+            <ul className="space-y-4">
+              {RESUME.education.map((entry) => (
+                <li key={entry.institution} className="print:break-inside-avoid">
+                  <p className="font-mono text-[14px] leading-snug text-ink">
+                    {entry.award}
+                  </p>
+                  <p className="mt-0.5 text-[13px] leading-snug text-ink-dim">
+                    {entry.institution}
+                    <span className="text-ink-faint"> · {entry.span}</span>
+                  </p>
+                  {entry.coursework ? (
+                    <p className="mt-2 text-[13px] leading-[1.6] text-ink-faint">
+                      Relevant coursework: {entry.coursework.join(", ")}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
           </Section>
         </div>
       </main>
